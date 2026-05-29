@@ -1,3 +1,176 @@
+const API_URL = '';
+const GOOGLE_CLIENT_ID = '';
+
+let authToken = localStorage.getItem('planner_auth_token');
+let currentUser = null;
+let authMode = 'login';
+
+async function api(endpoint, method, body) {
+    const headers = { 'Content-Type': 'application/json' };
+    if (authToken) headers['Authorization'] = 'Bearer ' + authToken;
+    const opts = { method, headers };
+    if (body) opts.body = JSON.stringify(body);
+    const res = await fetch(API_URL + endpoint, opts);
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Ошибка сервера');
+    return data;
+}
+
+async function pullFromServer() {
+    const data = await api('/data', 'GET');
+    if (data.planner) {
+        const p = data.planner;
+        if (p.xp) xp = p.xp;
+        if (p.tasks) tasks = p.tasks;
+        if (p.workouts) workouts = p.workouts;
+        if (p.state) state = p.state;
+        if (p.reflection) reflection = p.reflection;
+        if (p.settings) settings = p.settings;
+        if (p.pomodoro) pomodoro = p.pomodoro;
+        if (p.dailyQuests) dailyQuests = p.dailyQuests;
+        if (p.achievementsData) achievementsData = p.achievementsData;
+    }
+}
+
+async function pushToServer() {
+    const data = { xp, tasks, workouts, state, reflection, settings, pomodoro, dailyQuests, achievementsData };
+    await api('/data', 'PUT', { planner: data });
+}
+
+let pushTimer = null;
+function schedulePush() {
+    if (!authToken) return;
+    clearTimeout(pushTimer);
+    pushTimer = setTimeout(async () => {
+        try { await pushToServer(); } catch (e) { console.warn('Sync failed:', e); }
+    }, 3000);
+}
+
+function setupAuthUI() {
+    const overlay = document.getElementById('authOverlay');
+    if (!overlay) return;
+    const form = document.getElementById('authForm');
+    const tabs = overlay.querySelectorAll('.auth-tab');
+    const nameField = document.getElementById('authName');
+    const submitBtn = document.getElementById('authSubmit');
+    const errorDiv = document.getElementById('authError');
+    const skipBtn = document.getElementById('authSkip');
+
+    tabs.forEach(tab => {
+        tab.addEventListener('click', () => {
+            authMode = tab.dataset.auth;
+            tabs.forEach(t => t.classList.remove('active'));
+            tab.classList.add('active');
+            nameField.style.display = authMode === 'register' ? 'block' : 'none';
+            submitBtn.textContent = authMode === 'login' ? 'ВОЙТИ' : 'СОЗДАТЬ АККАУНТ';
+            errorDiv.textContent = '';
+        });
+    });
+
+    form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const email = document.getElementById('authEmail').value.trim();
+        const password = document.getElementById('authPassword').value;
+        const name = nameField.value.trim();
+        errorDiv.textContent = '';
+        submitBtn.disabled = true;
+        submitBtn.textContent = 'ЗАГРУЗКА...';
+        try {
+            if (authMode === 'register') {
+                const data = await api('/register', 'POST', { email, password, name });
+                authToken = data.token;
+                currentUser = data.user;
+                localStorage.setItem('planner_auth_token', authToken);
+                await pushToServer();
+            } else {
+                const data = await api('/login', 'POST', { email, password });
+                authToken = data.token;
+                currentUser = data.user;
+                localStorage.setItem('planner_auth_token', authToken);
+                await pullFromServer();
+            }
+            hideAuth();
+            initApp();
+        } catch (err) {
+            errorDiv.textContent = err.message;
+            submitBtn.disabled = false;
+            submitBtn.textContent = authMode === 'login' ? 'ВОЙТИ' : 'СОЗДАТЬ АККАУНТ';
+        }
+    });
+
+    const googleBtn = document.getElementById('googleSignInBtn');
+    if (GOOGLE_CLIENT_ID) {
+        googleBtn.style.display = 'flex';
+        googleBtn.addEventListener('click', () => {
+            if (window.google && google.accounts && google.accounts.id) {
+                google.accounts.id.initialize({
+                    client_id: GOOGLE_CLIENT_ID,
+                    callback: async (response) => {
+                        try {
+                            const data = await api('/auth/google', 'POST', { token: response.credential });
+                            authToken = data.token;
+                            currentUser = data.user;
+                            localStorage.setItem('planner_auth_token', authToken);
+                            if (data.isNew) await pushToServer();
+                            else await pullFromServer();
+                            hideAuth();
+                            initApp();
+                        } catch (err) {
+                            errorDiv.textContent = err.message;
+                        }
+                    }
+                });
+                google.accounts.id.prompt();
+            }
+        });
+    } else {
+        googleBtn.style.display = 'none';
+    }
+
+    skipBtn.addEventListener('click', () => {
+        localStorage.setItem('planner_auth_skipped', '1');
+        hideAuth();
+        initApp();
+    });
+}
+
+function hideAuth() {
+    const overlay = document.getElementById('authOverlay');
+    if (overlay) overlay.classList.add('hidden');
+}
+
+function showAuth() {
+    const overlay = document.getElementById('authOverlay');
+    if (overlay) overlay.classList.remove('hidden');
+}
+
+function logout() {
+    authToken = null;
+    currentUser = null;
+    localStorage.removeItem('planner_auth_token');
+    localStorage.removeItem('planner_auth_skipped');
+    showAuth();
+}
+
+function updateAuthStatus() {
+    const statusEl = document.getElementById('authStatusText');
+    const loginBtn = document.getElementById('loginFromSettings');
+    const logoutBtn = document.getElementById('logoutBtn');
+    if (statusEl) {
+        if (currentUser) {
+            statusEl.textContent = currentUser.email;
+            statusEl.style.color = 'var(--accent)';
+            if (loginBtn) loginBtn.style.display = 'none';
+            if (logoutBtn) logoutBtn.style.display = 'inline-block';
+        } else {
+            statusEl.textContent = 'Не авторизован — данные только на устройстве';
+            statusEl.style.color = 'var(--text3)';
+            if (loginBtn) loginBtn.style.display = 'inline-block';
+            if (logoutBtn) logoutBtn.style.display = 'none';
+        }
+    }
+}
+
 const DAYS = ['ВОСКРЕСЕНЬЕ','ПОНЕДЕЛЬНИК','ВТОРНИК','СРЕДА','ЧЕТВЕРГ','ПЯТНИЦА','СУББОТА'];
 const DAYS_CAL = ['ПН','ВТ','СР','ЧТ','ПТ','СБ','ВС'];
 const MONTHS = ['ЯНВАРЯ','ФЕВРАЛЯ','МАРТА','АПРЕЛЯ','МАЯ','ИЮНЯ','ИЮЛЯ','АВГУСТА','СЕНТЯБРЯ','ОКТЯБРЯ','НОЯБРЯ','ДЕКАБРЯ'];
@@ -33,7 +206,7 @@ let dailyQuests = load('dailyQuests', {});
 let achievementsData = load('achievements', {});
 
 function getDefaultTasks(){ return (settings.defaultTasks || []).map(t=>({text:t,done:false})); }
-function saveAll(){ save('xp',xp); save('tasks',tasks); save('workouts',workouts); save('state',state); save('reflection',reflection); save('settings',settings); save('pomodoro',pomodoro); save('dailyQuests',dailyQuests); save('achievements',achievementsData); }
+function saveAll(){ save('xp',xp); save('tasks',tasks); save('workouts',workouts); save('state',state); save('reflection',reflection); save('settings',settings); save('pomodoro',pomodoro); save('dailyQuests',dailyQuests); save('achievements',achievementsData); schedulePush(); }
 
 function addXP(amount){ xp.total += amount; checkLevelUp(); saveAll(); updateXP(); checkAchievements(); }
 function removeXP(amount){ xp.total = Math.max(0, xp.total - amount); saveAll(); updateXP(); }
@@ -139,9 +312,9 @@ function renderToday(){
     const list = document.createElement('div'); list.className = 'task-list';
     dayTasks.forEach((task, i)=>{
         const item = document.createElement('div'); item.className = 'task-item';
-        const cb = document.createElement('div'); cb.className = 'checkbox'+(task.done?' checked':'');
+        const cb2 = document.createElement('div'); cb2.className = 'checkbox'+(task.done?' checked':'');
         const text = document.createElement('span'); text.className = 'task-text'+(task.done?' done':''); text.textContent = task.text;
-        item.appendChild(cb); item.appendChild(text);
+        item.appendChild(cb2); item.appendChild(text);
         item.addEventListener('click', (e)=>{ e.stopPropagation(); dayTasks[i].done=!dayTasks[i].done; if(dayTasks[i].done) addXP(5); else removeXP(5); saveAll(); renderToday(); });
         list.appendChild(item);
     });
@@ -196,9 +369,9 @@ function renderWeekDays(dates){
         const list=document.createElement('div');list.className='task-list';
         dayTasks.forEach((task,i)=>{
             const item=document.createElement('div');item.className='task-item';
-            const cb=document.createElement('div');cb.className='checkbox'+(task.done?' checked':'');
+            const cb2=document.createElement('div');cb2.className='checkbox'+(task.done?' checked':'');
             const text=document.createElement('span');text.className='task-text'+(task.done?' done':'');text.textContent=task.text;
-            item.appendChild(cb);item.appendChild(text);
+            item.appendChild(cb2);item.appendChild(text);
             item.addEventListener('click',(e)=>{e.stopPropagation();dayTasks[i].done=!dayTasks[i].done;if(dayTasks[i].done)addXP(5);else removeXP(5);saveAll();renderWeek();});
             list.appendChild(item);
         });
@@ -247,9 +420,9 @@ function renderCalendarDay(key, dt){
     if(!dayTasks || dayTasks.length === 0){ container.innerHTML = '<div style="color:var(--text3);font-size:12px;padding:8px 0">Нет задач</div>'; return; }
     dayTasks.forEach((task,i)=>{
         const item = document.createElement('div'); item.className = 'task-item';
-        const cb = document.createElement('div'); cb.className = 'checkbox'+(task.done?' checked':'');
+        const cb2 = document.createElement('div'); cb2.className = 'checkbox'+(task.done?' checked':'');
         const text = document.createElement('span'); text.className = 'task-text'+(task.done?' done':''); text.textContent = task.text;
-        item.appendChild(cb); item.appendChild(text);
+        item.appendChild(cb2); item.appendChild(text);
         item.addEventListener('click',(e)=>{e.stopPropagation();dayTasks[i].done=!dayTasks[i].done;if(dayTasks[i].done)addXP(5);else removeXP(5);saveAll();renderCalendarDay(key,dt);});
         container.appendChild(item);
     });
@@ -435,6 +608,7 @@ function renderSettings(){
     document.getElementById('settingsName').oninput = function(){ settings.name=this.value; saveAll(); };
     document.getElementById('remindMorning').onchange = function(){ settings.remindMorning=this.value; saveAll(); setupReminders(); };
     document.getElementById('remindEvening').onchange = function(){ settings.remindEvening=this.value; saveAll(); setupReminders(); };
+    updateAuthStatus();
 }
 
 function setupReminders(){
@@ -538,7 +712,7 @@ function showInlineInput(parentEl, dayTasks, callback){
     setTimeout(()=>input.focus(), 50);
 }
 
-function init(){
+function initApp(){
     updateXP();
     document.querySelectorAll('.nav-btn,.mob-btn').forEach(btn=>{btn.addEventListener('click',()=>switchTab(btn.dataset.tab));});
     document.querySelectorAll('.sub-tab').forEach(btn=>{btn.addEventListener('click',()=>switchSubTab(btn.dataset.subtab));});
@@ -600,7 +774,36 @@ function init(){
         setTimeout(()=>input.focus(), 50);
     });
 
+    const logoutBtn = document.getElementById('logoutBtn');
+    if (logoutBtn) logoutBtn.addEventListener('click', logout);
+    const loginBtn = document.getElementById('loginFromSettings');
+    if (loginBtn) loginBtn.addEventListener('click', showAuth);
+
     renderToday(); renderWeek(); renderState(); renderWorkouts(); renderReflection(); checkAchievements();
     if('Notification' in window && Notification.permission==='granted') setupReminders();
 }
-document.addEventListener('DOMContentLoaded', init);
+
+let appInitialized = false;
+document.addEventListener('DOMContentLoaded', async () => {
+    setupAuthUI();
+    if (authToken && API_URL) {
+        try {
+            const data = await api('/me', 'GET');
+            currentUser = data.user;
+            await pullFromServer();
+            hideAuth();
+            if (!appInitialized) { appInitialized = true; initApp(); }
+        } catch (e) {
+            authToken = null;
+            localStorage.removeItem('planner_auth_token');
+            currentUser = null;
+            if (localStorage.getItem('planner_auth_skipped')) {
+                hideAuth();
+                if (!appInitialized) { appInitialized = true; initApp(); }
+            }
+        }
+    } else if (localStorage.getItem('planner_auth_skipped') || !API_URL) {
+        hideAuth();
+        if (!appInitialized) { appInitialized = true; initApp(); }
+    }
+});

@@ -187,6 +187,27 @@ body{overflow:hidden;padding-top:env(safe-area-inset-top);padding-bottom:env(saf
 .mob-btn span{font-size:8px;letter-spacing:.5px}
 .mob-btn.active{color:var(--accent)}
 
+.auth-overlay{position:fixed;top:0;left:0;right:0;bottom:0;background:var(--bg);z-index:1000;display:flex;align-items:center;justify-content:center;padding:20px}
+.auth-overlay.hidden{display:none}
+.auth-box{width:100%;max-width:400px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:32px;text-align:center}
+.auth-logo{display:flex;align-items:center;justify-content:center;gap:10px;margin-bottom:8px}
+.auth-subtitle{font-size:12px;color:var(--text3);margin-bottom:24px;letter-spacing:1px}
+.auth-tabs{display:flex;gap:4px;background:var(--surface2);border-radius:var(--radius);padding:3px;margin-bottom:20px}
+.auth-tab{flex:1;padding:10px;background:none;border:none;color:var(--text3);font-size:11px;font-weight:600;letter-spacing:1.5px;cursor:pointer;border-radius:6px;transition:.2s}
+.auth-tab.active{background:var(--accent-dim);color:var(--accent)}
+.auth-tab:hover{color:var(--text)}
+.auth-box form input{width:100%;background:var(--surface2);border:1px solid var(--border);color:var(--text);padding:12px 16px;border-radius:var(--radius);font-size:13px;margin-bottom:10px;outline:none;font-family:inherit;box-sizing:border-box}
+.auth-box form input:focus{border-color:var(--accent)}
+.auth-error{color:var(--fail);font-size:12px;margin-bottom:10px;min-height:16px}
+.auth-submit{width:100%;padding:12px;font-size:13px;letter-spacing:1.5px}
+.auth-divider{display:flex;align-items:center;gap:12px;margin:16px 0;color:var(--text3);font-size:11px}
+.auth-divider::before,.auth-divider::after{content:'';flex:1;height:1px;background:var(--border)}
+.btn-google{display:flex;align-items:center;justify-content:center;gap:10px;width:100%;background:var(--surface2);border:1px solid var(--border);color:var(--text);padding:12px;border-radius:var(--radius);font-size:13px;cursor:pointer;transition:.2s;font-family:inherit}
+.btn-google:hover{border-color:var(--text3)}
+.auth-skip{display:block;margin:16px auto 0;background:none;border:none;color:var(--text3);font-size:12px;cursor:pointer;padding:8px 16px;transition:.2s;font-family:inherit}
+.auth-skip:hover{color:var(--text)}
+.auth-status{font-size:12px;color:var(--text2);margin-bottom:4px;word-break:break-all}
+
 @media(max-width:768px){
 .sidebar{display:none}
 .mobile-nav{display:flex}
