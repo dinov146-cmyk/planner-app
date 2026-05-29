@@ -150,7 +150,7 @@ function renderToday(){
     });
     card.appendChild(list);
     const addBtn = document.createElement('button'); addBtn.className='btn-secondary'; addBtn.style.cssText='margin-top:10px;padding:6px 12px;font-size:11px'; addBtn.textContent='+ ДОБАВИТЬ ЗАДАЧУ';
-    addBtn.addEventListener('click', ()=>{ const t=prompt('Название задачи:'); if(t&&t.trim()){ dayTasks.push({text:t.trim(),done:false}); saveAll(); renderToday(); } });
+    addBtn.addEventListener('click', ()=>{ showInlineInput(card, dayTasks, ()=>renderToday()); });
     card.appendChild(addBtn);
     container.appendChild(card);
     saveAll();
@@ -208,7 +208,7 @@ function renderWeekDays(dates){
         });
         card.appendChild(list);
         const addBtn=document.createElement('button');addBtn.className='btn-secondary';addBtn.style.cssText='margin-top:10px;padding:6px 12px;font-size:11px';addBtn.textContent='+ ДОБАВИТЬ ЗАДАЧУ';
-        addBtn.addEventListener('click',()=>{const t=prompt('Название задачи:');if(t&&t.trim()){dayTasks.push({text:t.trim(),done:false});saveAll();renderWeek();}});
+        addBtn.addEventListener('click',()=>{showInlineInput(card,dayTasks,()=>renderWeek());});
         card.appendChild(addBtn);container.appendChild(card);
     });
     saveAll();
@@ -488,6 +488,21 @@ function addExerciseRow(){
     list.appendChild(row);
 }
 
+// === INLINE INPUT (instead of prompt) ===
+function showInlineInput(parentEl, dayTasks, callback){
+    const existing = parentEl.querySelector('.inline-add');
+    if(existing){ existing.querySelector('input').focus(); return; }
+    const row = document.createElement('div'); row.className='inline-add task-item'; row.style.cssText='gap:8px;margin-top:10px';
+    const input = document.createElement('input'); input.type='text'; input.placeholder='Название задачи';
+    input.style.cssText='flex:1;background:var(--surface2);border:1px solid var(--border);color:var(--text);padding:8px 10px;border-radius:6px;font-size:13px;outline:none';
+    const ok = document.createElement('button'); ok.className='btn-primary'; ok.style.cssText='padding:6px 12px;font-size:11px'; ok.textContent='✓';
+    const cancel = document.createElement('button'); cancel.className='btn-icon'; cancel.style.cssText='color:var(--fail)'; cancel.textContent='✕';
+    ok.addEventListener('click',()=>{if(input.value.trim()){dayTasks.push({text:input.value.trim(),done:false});saveAll();callback();}});
+    cancel.addEventListener('click',()=>row.remove());
+    input.addEventListener('keydown',(e)=>{if(e.key==='Enter')ok.click();if(e.key==='Escape')row.remove();});
+    row.appendChild(input);row.appendChild(ok);row.appendChild(cancel);parentEl.appendChild(row);input.focus();
+}
+
 // === INIT ===
 function init(){
     updateXP();
@@ -514,7 +529,17 @@ function init(){
     document.getElementById('importData').addEventListener('click',()=>document.getElementById('importFile').click());
     document.getElementById('importFile').addEventListener('change',(e)=>{if(e.target.files[0])importData(e.target.files[0]);});
     document.getElementById('resetAll').addEventListener('click',()=>{if(confirm('Удалить ВСЕ данные? Это необратимо.')){localStorage.clear();location.reload();}});
-    document.getElementById('addDefaultTask').addEventListener('click',()=>{const t=prompt('Название задачи:');if(t&&t.trim()){settings.defaultTasks.push(t.trim());saveAll();renderSettings();}});
+    document.getElementById('addDefaultTask').addEventListener('click',()=>{
+        const container = document.getElementById('defaultTasksList');
+        const row = document.createElement('div'); row.className='task-item'; row.style.cssText='gap:8px';
+        const input = document.createElement('input'); input.type='text'; input.placeholder='Название задачи'; input.style.cssText='flex:1;background:var(--surface2);border:1px solid var(--border);color:var(--text);padding:8px 10px;border-radius:6px;font-size:12px;outline:none';
+        const ok = document.createElement('button'); ok.className='btn-primary'; ok.style.cssText='padding:6px 12px;font-size:11px'; ok.textContent='✓';
+        const cancel = document.createElement('button'); cancel.className='btn-icon'; cancel.style.cssText='color:var(--fail)'; cancel.textContent='✕';
+        ok.addEventListener('click',()=>{if(input.value.trim()){settings.defaultTasks.push(input.value.trim());saveAll();renderSettings();}});
+        cancel.addEventListener('click',()=>row.remove());
+        input.addEventListener('keydown',(e)=>{if(e.key==='Enter')ok.click();if(e.key==='Escape')row.remove();});
+        row.appendChild(input);row.appendChild(ok);row.appendChild(cancel);container.appendChild(row);input.focus();
+    });
 
     renderToday(); renderWeek(); renderState(); renderWorkouts(); renderReflection(); checkAchievements();
     if('Notification' in window && Notification.permission==='granted') setupReminders();
