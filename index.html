@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>ПЛАНЕР — Дисциплина</title>
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="ПЛАНЕР">
+    <meta name="theme-color" content="#000000">
+    <meta name="mobile-web-app-capable" content="yes">
+    <link rel="manifest" href="manifest.json">
+    <link rel="apple-touch-icon" href="icon-192.png">
+    <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="app">
+        <aside class="sidebar">
+            <div class="sidebar-logo">
+                <span class="logo-icon">◈</span>
+                <span class="logo-text">ПЛАНЕР</span>
+            </div>
+            <nav class="sidebar-nav">
+                <button class="nav-btn active" data-tab="dashboard">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+                    <span>Прогресс</span>
+                </button>
+                <button class="nav-btn" data-tab="workout">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6.5 6.5h11M6.5 17.5h11M2 12h4M18 12h4M6 6.5v11M18 6.5v11"/></svg>
+                    <span>Тренировка</span>
+                </button>
+                <button class="nav-btn" data-tab="reflection">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+                    <span>Рефлексия</span>
+                </button>
+            </nav>
+            <div class="sidebar-xp">
+                <div class="xp-label">УРОВЕНЬ <span id="level">1</span></div>
+                <div class="xp-bar"><div class="xp-fill" id="xpFill" style="width:0%"></div></div>
+                <div class="xp-text"><span id="xpCurrent">0</span> / <span id="xpMax">100</span> XP</div>
+            </div>
+        </aside>
+
+        <main class="content">
+            <!-- DASHBOARD -->
+            <section class="tab active" id="tab-dashboard">
+                <div class="sub-tabs">
+                    <button class="sub-tab active" data-subtab="today">СЕГОДНЯ</button>
+                    <button class="sub-tab" data-subtab="week">НЕДЕЛЯ</button>
+                </div>
+
+                <!-- TODAY -->
+                <div class="subtab active" id="subtab-today">
+                    <div class="section-header">
+                        <h1 id="todayTitle"></h1>
+                        <div class="today-stats">
+                            <span id="todayDone">0</span>/<span id="todayTotal">0</span>
+                            <span class="today-pct" id="todayPct">0%</span>
+                        </div>
+                    </div>
+
+                    <div class="today-progress">
+                        <div class="today-progress-bar"><div class="today-progress-fill" id="todayProgressFill"></div></div>
+                    </div>
+
+                    <div class="days-container" id="todayContainer"></div>
+
+                    <div class="state-row">
+                        <div class="card state-card">
+                            <h3>СОН</h3>
+                            <div class="sleep-selector" id="sleepSelector">
+                                <button data-value="4">4ч</button>
+                                <button data-value="5">5ч</button>
+                                <button data-value="6">6ч</button>
+                                <button data-value="7">7ч</button>
+                                <button data-value="8">8ч</button>
+                                <button data-value="9">9ч</button>
+                                <button data-value="10">10ч</button>
+                            </div>
+                        </div>
+                        <div class="card state-card">
+                            <h3>ЭНЕРГИЯ</h3>
+                            <div class="energy-selector" id="energySelector"></div>
+                        </div>
+                        <div class="card state-card">
+                            <h3>НАСТРОЕНИЕ</h3>
+                            <div class="mood-selector" id="moodSelector">
+                                <button data-value="1" title="Ужасно">😫</button>
+                                <button data-value="2" title="Плохо">😔</button>
+                                <button data-value="3" title="Нормально">😐</button>
+                                <button data-value="4" title="Хорошо">🙂</button>
+                                <button data-value="5" title="Отлично">😊</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- WEEK -->
+                <div class="subtab" id="subtab-week">
+                    <div class="section-header">
+                        <h1>НЕДЕЛЯ</h1>
+                        <div class="date-nav">
+                            <button class="btn-icon" id="prevWeek">◀</button>
+                            <span id="weekRange"></span>
+                            <button class="btn-icon" id="nextWeek">▶</button>
+                        </div>
+                    </div>
+
+                    <div class="stats-row">
+                        <div class="stat-card">
+                            <div class="stat-value" id="statTotal">0</div>
+                            <div class="stat-label">ВСЕГО ЦЕЛЕЙ</div>
+                        </div>
+                        <div class="stat-card stat-done">
+                            <div class="stat-value" id="statDone">0</div>
+                            <div class="stat-label">ВЫПОЛНЕНО</div>
+                        </div>
+                        <div class="stat-card stat-fail">
+                            <div class="stat-value" id="statFail">0</div>
+                            <div class="stat-label">НЕ ВЫПОЛНЕНО</div>
+                        </div>
+                    </div>
+
+                    <div class="charts-row">
+                        <div class="card chart-card">
+                            <h3>АКТИВНОСТЬ</h3>
+                            <div class="bar-chart" id="barChart"></div>
+                        </div>
+                        <div class="card donut-card">
+                            <h3>ВЫПОЛНЕНИЕ</h3>
+                            <div class="donut-container">
+                                <svg class="donut" viewBox="0 0 120 120">
+                                    <circle class="donut-bg" cx="60" cy="60" r="50"/>
+                                    <circle class="donut-fill" id="donutFill" cx="60" cy="60" r="50"/>
+                                </svg>
+                                <div class="donut-center">
+                                    <div class="donut-value" id="donutValue">0%</div>
+                                    <div class="donut-label">СРЕДНИЙ %</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="days-container" id="weekContainer"></div>
+                </div>
+            </section>
+
+            <!-- WORKOUT -->
+            <section class="tab" id="tab-workout">
+                <div class="section-header">
+                    <h1>ТРЕНИРОВКА</h1>
+                    <button class="btn-primary" id="addWorkout">+ НОВАЯ ТРЕНИРОВКА</button>
+                </div>
+                <div class="workout-list" id="workoutList"></div>
+            </section>
+
+            <!-- REFLECTION -->
+            <section class="tab" id="tab-reflection">
+                <div class="section-header">
+                    <h1>РЕФЛЕКСИЯ</h1>
+                </div>
+                <div class="reflection-container">
+                    <div class="card">
+                        <h3>УРОК ДНЯ</h3>
+                        <textarea id="lessonOfDay" placeholder="Что ты сегодня понял?"></textarea>
+                    </div>
+                    <div class="card">
+                        <h3>ЗАМЕТКИ</h3>
+                        <textarea id="dailyNotes" placeholder="Любые мысли..."></textarea>
+                    </div>
+                    <div class="card history-card">
+                        <h3>ИСТОРИЯ УРОКОВ</h3>
+                        <div id="lessonHistory"></div>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <div class="mobile-nav">
+        <button class="mob-btn active" data-tab="dashboard">◈<span>Прогресс</span></button>
+        <button class="mob-btn" data-tab="workout">⚡<span>Тренировка</span></button>
+        <button class="mob-btn" data-tab="reflection">✎<span>Рефлексия</span></button>
+    </div>
+
+    <div class="modal-overlay" id="workoutModal">
+        <div class="modal">
+            <div class="modal-header">
+                <h2>НОВАЯ ТРЕНИРОВКА</h2>
+                <button class="btn-icon" id="closeModal">✕</button>
+            </div>
+            <div class="modal-body">
+                <input type="text" id="workoutName" placeholder="Название (например: Тренировка #1)">
+                <div class="exercise-list" id="exerciseList"></div>
+                <button class="btn-secondary" id="addExercise">+ ДОБАВИТЬ УПРАЖНЕНИЕ</button>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-primary" id="saveWorkout">СОХРАНИТЬ</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="quest-popup" id="questPopup">
+        <div class="quest-icon">⚔️</div>
+        <div class="quest-text">
+            <div class="quest-title">КВЕСТ ВЫПОЛНЕН!</div>
+            <div class="quest-desc" id="questDesc">+10 XP</div>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+    <script>
+        if('serviceWorker' in navigator){
+            navigator.serviceWorker.register('/sw.js').then(()=>console.log('SW registered'));
+        }
+    </script>
+</body>
+</html>
