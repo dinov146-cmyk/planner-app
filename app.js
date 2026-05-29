@@ -422,7 +422,15 @@ function renderSettings(){
         const item = document.createElement('div'); item.className = 'task-item';
         item.innerHTML = `<span class="task-text">${t}</span>`;
         const del = document.createElement('button'); del.className='btn-icon'; del.style.cssText='color:var(--fail);margin-left:auto'; del.textContent='✕';
-        del.addEventListener('click',()=>{settings.defaultTasks.splice(i,1);saveAll();renderSettings();});
+        del.addEventListener('click',()=>{
+            const removedText = settings.defaultTasks[i];
+            settings.defaultTasks.splice(i,1);
+            Object.keys(tasks).forEach(key=>{
+                tasks[key] = tasks[key].filter(t=> t.text !== removedText);
+                if(tasks[key].length === 0) delete tasks[key];
+            });
+            saveAll(); renderSettings(); renderToday();
+        });
         item.appendChild(del); list.appendChild(item);
     });
     document.getElementById('settingsName').oninput = function(){ settings.name=this.value; saveAll(); };
