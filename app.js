@@ -1,5 +1,4 @@
 const DAYS = ['ВОСКРЕСЕНЬЕ','ПОНЕДЕЛЬНИК','ВТОРНИК','СРЕДА','ЧЕТВЕРГ','ПЯТНИЦА','СУББОТА'];
-const DAYS_SHORT = ['ПН','ВТ','СР','ЧТ','ПТ','СБ','ВС'];
 const DAYS_CAL = ['ПН','ВТ','СР','ЧТ','ПТ','СБ','ВС'];
 const MONTHS = ['ЯНВАРЯ','ФЕВРАЛЯ','МАРТА','АПРЕЛЯ','МАЯ','ИЮНЯ','ИЮЛЯ','АВГУСТА','СЕНТЯБРЯ','ОКТЯБРЯ','НОЯБРЯ','ДЕКАБРЯ'];
 
@@ -65,6 +64,7 @@ function switchTab(tab){
     if(tab==='timer') renderTimer();
     if(tab==='achievements') renderAchievements();
     if(tab==='settings') renderSettings();
+    if(tab==='reflection') renderReflection();
 }
 function switchSubTab(sub){
     document.querySelectorAll('.sub-tab').forEach(b=>b.classList.remove('active'));
@@ -73,7 +73,6 @@ function switchSubTab(sub){
     document.getElementById('subtab-'+sub).classList.add('active');
 }
 
-// === STREAK ===
 function calcStreak(){
     let streak = 0;
     const today = new Date();
@@ -90,7 +89,6 @@ function calcStreak(){
     return streak;
 }
 
-// === DAILY QUESTS ===
 const QUEST_POOL = [
     'Пробежать 3 км','Прочитать 20 страниц','Медитация 10 минут','Выпить 8 стаканов воды',
     'Прибраться в комнате','Позвонить близкому человеку','Написать 3 вещи за которые благодарен',
@@ -113,15 +111,14 @@ function renderDailyQuest(){
     document.getElementById('questText').textContent = quest.text;
     const cb = document.getElementById('questCheckbox');
     cb.className = 'checkbox' + (quest.done ? ' checked' : '');
-    document.getElementById('dailyQuestCard').onclick = ()=>{
+    document.getElementById('dailyQuestCard').onclick = (e)=>{
+        e.stopPropagation();
         quest.done = !quest.done;
         if(quest.done) addXP(10); else removeXP(10);
-        saveAll();
-        renderDailyQuest();
+        saveAll(); renderDailyQuest();
     };
 }
 
-// === TODAY ===
 function renderToday(){
     const now = new Date();
     const key = dateKey();
@@ -145,18 +142,17 @@ function renderToday(){
         const cb = document.createElement('div'); cb.className = 'checkbox'+(task.done?' checked':'');
         const text = document.createElement('span'); text.className = 'task-text'+(task.done?' done':''); text.textContent = task.text;
         item.appendChild(cb); item.appendChild(text);
-        item.addEventListener('click', ()=>{ dayTasks[i].done=!dayTasks[i].done; if(dayTasks[i].done) addXP(5); else removeXP(5); saveAll(); renderToday(); });
+        item.addEventListener('click', (e)=>{ e.stopPropagation(); dayTasks[i].done=!dayTasks[i].done; if(dayTasks[i].done) addXP(5); else removeXP(5); saveAll(); renderToday(); });
         list.appendChild(item);
     });
     card.appendChild(list);
     const addBtn = document.createElement('button'); addBtn.className='btn-secondary'; addBtn.style.cssText='margin-top:10px;padding:6px 12px;font-size:11px'; addBtn.textContent='+ ДОБАВИТЬ ЗАДАЧУ';
-    addBtn.addEventListener('click', ()=>{ showInlineInput(card, dayTasks, ()=>renderToday()); });
+    addBtn.addEventListener('click', (e)=>{ e.stopPropagation(); showInlineInput(card, dayTasks, ()=>renderToday()); });
     card.appendChild(addBtn);
     container.appendChild(card);
     saveAll();
 }
 
-// === WEEK ===
 function renderWeek(){
     const dates = getWeekDates(weekOffset);
     document.getElementById('weekRange').textContent = `${formatDate(dates[0])} — ${formatDate(dates[6])}`;
@@ -203,18 +199,17 @@ function renderWeekDays(dates){
             const cb=document.createElement('div');cb.className='checkbox'+(task.done?' checked':'');
             const text=document.createElement('span');text.className='task-text'+(task.done?' done':'');text.textContent=task.text;
             item.appendChild(cb);item.appendChild(text);
-            item.addEventListener('click',()=>{dayTasks[i].done=!dayTasks[i].done;if(dayTasks[i].done)addXP(5);else removeXP(5);saveAll();renderWeek();});
+            item.addEventListener('click',(e)=>{e.stopPropagation();dayTasks[i].done=!dayTasks[i].done;if(dayTasks[i].done)addXP(5);else removeXP(5);saveAll();renderWeek();});
             list.appendChild(item);
         });
         card.appendChild(list);
         const addBtn=document.createElement('button');addBtn.className='btn-secondary';addBtn.style.cssText='margin-top:10px;padding:6px 12px;font-size:11px';addBtn.textContent='+ ДОБАВИТЬ ЗАДАЧУ';
-        addBtn.addEventListener('click',()=>{showInlineInput(card,dayTasks,()=>renderWeek());});
+        addBtn.addEventListener('click',(e)=>{e.stopPropagation();showInlineInput(card,dayTasks,()=>renderWeek());});
         card.appendChild(addBtn);container.appendChild(card);
     });
     saveAll();
 }
 
-// === CALENDAR ===
 function renderCalendar(){
     document.getElementById('monthLabel').textContent = `${MONTHS[calMonth].toUpperCase()} ${calYear}`;
     const grid = document.getElementById('calendarGrid'); grid.innerHTML = '';
@@ -255,12 +250,11 @@ function renderCalendarDay(key, dt){
         const cb = document.createElement('div'); cb.className = 'checkbox'+(task.done?' checked':'');
         const text = document.createElement('span'); text.className = 'task-text'+(task.done?' done':''); text.textContent = task.text;
         item.appendChild(cb); item.appendChild(text);
-        item.addEventListener('click',()=>{dayTasks[i].done=!dayTasks[i].done;if(dayTasks[i].done)addXP(5);else removeXP(5);saveAll();renderCalendarDay(key,dt);});
+        item.addEventListener('click',(e)=>{e.stopPropagation();dayTasks[i].done=!dayTasks[i].done;if(dayTasks[i].done)addXP(5);else removeXP(5);saveAll();renderCalendarDay(key,dt);});
         container.appendChild(item);
     });
 }
 
-// === STATE (sleep, energy, mood) ===
 function renderState(){
     const today = dateKey(), s = state[today] || {};
     document.querySelectorAll('#sleepSelector button').forEach(btn=>{
@@ -279,7 +273,6 @@ function renderState(){
     });
 }
 
-// === WORKOUTS ===
 function renderWorkouts(){
     const list=document.getElementById('workoutList');list.innerHTML='';
     if(!workouts.length){list.innerHTML='<div style="text-align:center;color:var(--text3);padding:40px;font-size:13px">Нет тренировок</div>';return;}
@@ -300,10 +293,9 @@ function renderWorkouts(){
         table.appendChild(tbody);card.appendChild(table);list.appendChild(card);
     });
     list.querySelectorAll('input').forEach(inp=>{inp.addEventListener('change',()=>{workouts[inp.dataset.w].exercises[inp.dataset.e][inp.dataset.f]=inp.value;saveAll();});});
-    list.querySelectorAll('.checkbox').forEach(cb=>{cb.addEventListener('click',()=>{const w=parseInt(cb.dataset.w),e=parseInt(cb.dataset.e);workouts[w].exercises[e].done=!workouts[w].exercises[e].done;if(workouts[w].exercises[e].done)addXP(3);else removeXP(3);saveAll();renderWorkouts();});});
+    list.querySelectorAll('.checkbox').forEach(cb=>{cb.addEventListener('click',(e)=>{e.stopPropagation();const w=parseInt(cb.dataset.w),e2=parseInt(cb.dataset.e);workouts[w].exercises[e2].done=!workouts[w].exercises[e2].done;if(workouts[w].exercises[e2].done)addXP(3);else removeXP(3);saveAll();renderWorkouts();});});
 }
 
-// === POMODORO TIMER ===
 let timerInterval = null, timerRunning = false, timerSeconds = 0, timerTotal = 0, timerMode = 'work';
 function renderTimer(){
     if(pomodoro.today !== dateKey()){ pomodoro.today = dateKey(); pomodoro.todayCount = 0; saveAll(); }
@@ -345,7 +337,6 @@ function startTimer(){
 }
 function resetTimer(){ clearInterval(timerInterval); timerRunning=false; timerSeconds=0; timerTotal=0; timerMode='work'; document.getElementById('timerStart').textContent='СТАРТ'; updateTimerDisplay(); }
 
-// === ACHIEVEMENTS ===
 const ACHIEVEMENTS = [
     {id:'first_task',icon:'🎯',name:'Первый шаг',desc:'Выполни первую задачу'},
     {id:'streak_3',icon:'🔥',name:'Серия 3 дня',desc:'3 дня подряд все задачи'},
@@ -396,13 +387,20 @@ function renderAchievements(){
     });
 }
 
-// === REFLECTION ===
+let reflectionBound = false;
 function renderReflection(){
     const today=dateKey(), r=reflection[today]||{};
     document.getElementById('lessonOfDay').value=r.lesson||'';
     document.getElementById('dailyNotes').value=r.notes||'';
-    document.getElementById('lessonOfDay').addEventListener('input',function(){reflection[today]=reflection[today]||{};reflection[today].lesson=this.value;saveAll();renderLessonHistory();checkAchievements();});
-    document.getElementById('dailyNotes').addEventListener('input',function(){reflection[today]=reflection[today]||{};reflection[today].notes=this.value;saveAll();});
+    if(!reflectionBound){
+        reflectionBound = true;
+        document.getElementById('lessonOfDay').addEventListener('input',function(){
+            const t=dateKey(); reflection[t]=reflection[t]||{}; reflection[t].lesson=this.value; saveAll(); renderLessonHistory(); checkAchievements();
+        });
+        document.getElementById('dailyNotes').addEventListener('input',function(){
+            const t=dateKey(); reflection[t]=reflection[t]||{}; reflection[t].notes=this.value; saveAll();
+        });
+    }
     renderLessonHistory();
 }
 function renderLessonHistory(){
@@ -412,7 +410,6 @@ function renderLessonHistory(){
     entries.forEach(([key,val])=>{const item=document.createElement('div');item.className='lesson-item';const d=new Date(key);item.innerHTML=`<div class="lesson-date">${formatDate(d).toUpperCase()}</div><div class="lesson-text">${val.lesson}</div>`;container.appendChild(item);});
 }
 
-// === SETTINGS ===
 function renderSettings(){
     document.getElementById('settingsName').value = settings.name || '';
     document.getElementById('remindMorning').value = settings.remindMorning || '07:00';
@@ -422,12 +419,14 @@ function renderSettings(){
         const item = document.createElement('div'); item.className = 'task-item';
         item.innerHTML = `<span class="task-text">${t}</span>`;
         const del = document.createElement('button'); del.className='btn-icon'; del.style.cssText='color:var(--fail);margin-left:auto'; del.textContent='✕';
-        del.addEventListener('click',()=>{
+        del.addEventListener('click',(e)=>{
+            e.stopPropagation();
             const removedText = settings.defaultTasks[i];
             settings.defaultTasks.splice(i,1);
             Object.keys(tasks).forEach(key=>{
-                tasks[key] = tasks[key].filter(t=> t.text !== removedText);
-                if(tasks[key].length === 0) delete tasks[key];
+                if(tasks[key]){
+                    tasks[key] = tasks[key].filter(tk=>tk.text !== removedText);
+                }
             });
             saveAll(); renderSettings(); renderToday();
         });
@@ -438,7 +437,6 @@ function renderSettings(){
     document.getElementById('remindEvening').onchange = function(){ settings.remindEvening=this.value; saveAll(); setupReminders(); };
 }
 
-// === NOTIFICATIONS ===
 function setupReminders(){
     if(!('Notification' in window)) { document.getElementById('notifStatus').textContent='Уведомления не поддерживаются'; return; }
     const scheduleReminder = (time, body) => {
@@ -463,7 +461,6 @@ function enableNotifications(){
     });
 }
 
-// === EXPORT/IMPORT ===
 function exportData(){
     const data = {xp,tasks,workouts,state,reflection,settings,pomodoro,dailyQuests,achievementsData};
     const blob = new Blob([JSON.stringify(data,null,2)], {type:'application/json'});
@@ -485,33 +482,62 @@ function importData(file){
     reader.readAsText(file);
 }
 
-// === EXERCISE MODAL ===
 let exerciseCount = 0;
 function addExerciseRow(){
     exerciseCount++;
     const list=document.getElementById('exerciseList');
     const row=document.createElement('div');row.className='exercise-row';
     row.innerHTML=`<input type="text" placeholder="Упражнение" class="ex-name"><input type="text" placeholder="П" class="ex-sets"><input type="text" placeholder="Тек" class="ex-cur"><input type="text" placeholder="Пред" class="ex-prev"><button class="btn-icon remove-ex" style="color:var(--fail);font-size:16px">✕</button>`;
-    row.querySelector('.remove-ex').addEventListener('click',()=>row.remove());
+    row.querySelector('.remove-ex').addEventListener('click',(e)=>{e.stopPropagation();row.remove();});
     list.appendChild(row);
 }
 
-// === INLINE INPUT (instead of prompt) ===
 function showInlineInput(parentEl, dayTasks, callback){
     const existing = parentEl.querySelector('.inline-add');
     if(existing){ existing.querySelector('input').focus(); return; }
-    const row = document.createElement('div'); row.className='inline-add task-item'; row.style.cssText='gap:8px;margin-top:10px';
-    const input = document.createElement('input'); input.type='text'; input.placeholder='Название задачи';
-    input.style.cssText='flex:1;background:var(--surface2);border:1px solid var(--border);color:var(--text);padding:8px 10px;border-radius:6px;font-size:13px;outline:none';
-    const ok = document.createElement('button'); ok.className='btn-primary'; ok.style.cssText='padding:6px 12px;font-size:11px'; ok.textContent='✓';
-    const cancel = document.createElement('button'); cancel.className='btn-icon'; cancel.style.cssText='color:var(--fail)'; cancel.textContent='✕';
-    ok.addEventListener('click',()=>{if(input.value.trim()){dayTasks.push({text:input.value.trim(),done:false});saveAll();callback();}});
-    cancel.addEventListener('click',()=>row.remove());
-    input.addEventListener('keydown',(e)=>{if(e.key==='Enter')ok.click();if(e.key==='Escape')row.remove();});
-    row.appendChild(input);row.appendChild(ok);row.appendChild(cancel);parentEl.appendChild(row);input.focus();
+    const row = document.createElement('div');
+    row.className = 'inline-add';
+    row.style.cssText = 'display:flex;align-items:center;gap:8px;margin-top:10px;padding:8px 0';
+    const input = document.createElement('input');
+    input.type = 'text';
+    input.placeholder = 'Введите название задачи...';
+    input.style.cssText = 'flex:1;background:#111;border:1px solid #333;color:#fff;padding:10px 14px;border-radius:8px;font-size:14px;outline:none;font-family:inherit;min-width:0';
+    input.addEventListener('focus', function(){ this.style.borderColor='#c5b358'; });
+    input.addEventListener('blur', function(){ this.style.borderColor='#333'; });
+    const ok = document.createElement('button');
+    ok.className = 'btn-primary';
+    ok.style.cssText = 'padding:10px 16px;font-size:12px;white-space:nowrap';
+    ok.textContent = '✓ ДОБАВИТЬ';
+    const cancel = document.createElement('button');
+    cancel.className = 'btn-icon';
+    cancel.style.cssText = 'color:#e74c3c;font-size:18px;padding:8px';
+    cancel.textContent = '✕';
+    ok.addEventListener('click', (e)=>{
+        e.stopPropagation();
+        const val = input.value.trim();
+        if(val){
+            dayTasks.push({text:val, done:false});
+            saveAll();
+            callback();
+        }
+    });
+    cancel.addEventListener('click', (e)=>{ e.stopPropagation(); row.remove(); });
+    input.addEventListener('keydown', (e)=>{
+        e.stopPropagation();
+        if(e.key==='Enter'){
+            e.preventDefault();
+            const val = input.value.trim();
+            if(val){ dayTasks.push({text:val, done:false}); saveAll(); callback(); }
+        }
+        if(e.key==='Escape'){ row.remove(); }
+    });
+    row.appendChild(input);
+    row.appendChild(ok);
+    row.appendChild(cancel);
+    parentEl.appendChild(row);
+    setTimeout(()=>input.focus(), 50);
 }
 
-// === INIT ===
 function init(){
     updateXP();
     document.querySelectorAll('.nav-btn,.mob-btn').forEach(btn=>{btn.addEventListener('click',()=>switchTab(btn.dataset.tab));});
@@ -537,16 +563,41 @@ function init(){
     document.getElementById('importData').addEventListener('click',()=>document.getElementById('importFile').click());
     document.getElementById('importFile').addEventListener('change',(e)=>{if(e.target.files[0])importData(e.target.files[0]);});
     document.getElementById('resetAll').addEventListener('click',()=>{if(confirm('Удалить ВСЕ данные? Это необратимо.')){localStorage.clear();location.reload();}});
-    document.getElementById('addDefaultTask').addEventListener('click',()=>{
+    document.getElementById('addDefaultTask').addEventListener('click',(e)=>{
+        e.stopPropagation();
         const container = document.getElementById('defaultTasksList');
-        const row = document.createElement('div'); row.className='task-item'; row.style.cssText='gap:8px';
-        const input = document.createElement('input'); input.type='text'; input.placeholder='Название задачи'; input.style.cssText='flex:1;background:var(--surface2);border:1px solid var(--border);color:var(--text);padding:8px 10px;border-radius:6px;font-size:12px;outline:none';
-        const ok = document.createElement('button'); ok.className='btn-primary'; ok.style.cssText='padding:6px 12px;font-size:11px'; ok.textContent='✓';
-        const cancel = document.createElement('button'); cancel.className='btn-icon'; cancel.style.cssText='color:var(--fail)'; cancel.textContent='✕';
-        ok.addEventListener('click',()=>{if(input.value.trim()){settings.defaultTasks.push(input.value.trim());saveAll();renderSettings();}});
-        cancel.addEventListener('click',()=>row.remove());
-        input.addEventListener('keydown',(e)=>{if(e.key==='Enter')ok.click();if(e.key==='Escape')row.remove();});
-        row.appendChild(input);row.appendChild(ok);row.appendChild(cancel);container.appendChild(row);input.focus();
+        const row = document.createElement('div');
+        row.style.cssText = 'display:flex;align-items:center;gap:8px;padding:4px 0';
+        const input = document.createElement('input');
+        input.type = 'text';
+        input.placeholder = 'Название задачи';
+        input.style.cssText = 'flex:1;background:#111;border:1px solid #333;color:#fff;padding:8px 10px;border-radius:6px;font-size:12px;outline:none;font-family:inherit;min-width:0';
+        input.addEventListener('focus', function(){ this.style.borderColor='#c5b358'; });
+        input.addEventListener('blur', function(){ this.style.borderColor='#333'; });
+        const ok = document.createElement('button');
+        ok.className = 'btn-primary';
+        ok.style.cssText = 'padding:6px 12px;font-size:11px';
+        ok.textContent = '✓';
+        const cancel = document.createElement('button');
+        cancel.className = 'btn-icon';
+        cancel.style.cssText = 'color:#e74c3c';
+        cancel.textContent = '✕';
+        ok.addEventListener('click',(e2)=>{
+            e2.stopPropagation();
+            if(input.value.trim()){
+                settings.defaultTasks.push(input.value.trim());
+                saveAll();
+                renderSettings();
+            }
+        });
+        cancel.addEventListener('click',(e2)=>{e2.stopPropagation();row.remove();});
+        input.addEventListener('keydown',(e2)=>{
+            e2.stopPropagation();
+            if(e2.key==='Enter'){e2.preventDefault();ok.click();}
+            if(e2.key==='Escape'){row.remove();}
+        });
+        row.appendChild(input);row.appendChild(ok);row.appendChild(cancel);container.appendChild(row);
+        setTimeout(()=>input.focus(), 50);
     });
 
     renderToday(); renderWeek(); renderState(); renderWorkouts(); renderReflection(); checkAchievements();
