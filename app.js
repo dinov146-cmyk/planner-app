@@ -4,16 +4,38 @@ const GOOGLE_CLIENT_ID = '';
 let authToken = localStorage.getItem('planner_auth_token');
 let currentUser = null;
 let authMode = 'login';
+let serverAwake = false;
+
+async function wakeServer() {
+    if (serverAwake || !API_URL) return true;
+    try {
+        await fetch(API_URL.replace('/api', '') + '/api/health', { signal: AbortSignal.timeout(60000) });
+        serverAwake = true;
+        return true;
+    } catch (e) {
+        return false;
+    }
+}
 
 async function api(endpoint, method, body) {
     const headers = { 'Content-Type': 'application/json' };
     if (authToken) headers['Authorization'] = 'Bearer ' + authToken;
     const opts = { method, headers };
     if (body) opts.body = JSON.stringify(body);
-    const res = await fetch(API_URL + endpoint, opts);
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.error || 'Ошибка сервера');
-    return data;
+    let lastErr;
+    for (let attempt = 0; attempt < 3; attempt++) {
+        try {
+            const res = await fetch(API_URL + endpoint, opts);
+            serverAwake = true;
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.error || 'Ошибка сервера');
+            return data;
+        } catch (e) {
+            lastErr = e;
+            if (attempt < 2) await new Promise(r => setTimeout(r, 3000 * (attempt + 1)));
+        }
+    }
+    throw lastErr;
 }
 
 async function pullFromServer() {
@@ -786,6 +808,12 @@ function initApp(){
 let appInitialized = false;
 document.addEventListener('DOMContentLoaded', async () => {
     setupAuthUI();
+    if (API_URL) {
+        const statusEl = document.getElementById('authError');
+        if (statusEl) statusEl.textContent = 'Пробуждение сервера...';
+        await wakeServer();
+        if (statusEl) statusEl.textContent = '';
+    }
     if (authToken && API_URL) {
         try {
             const data = await api('/me', 'GET');
