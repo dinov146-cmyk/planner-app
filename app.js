@@ -1,4 +1,4 @@
-const API_URL = '';
+const API_URL = 'https://planner-server-ncf0.onrender.com/api';
 const GOOGLE_CLIENT_ID = '';
 
 let authToken = localStorage.getItem('planner_auth_token');
