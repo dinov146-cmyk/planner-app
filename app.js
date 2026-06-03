@@ -808,28 +808,26 @@ function initApp(){
 let appInitialized = false;
 document.addEventListener('DOMContentLoaded', async () => {
     setupAuthUI();
-    if (API_URL) {
-        const statusEl = document.getElementById('authError');
-        if (statusEl) statusEl.textContent = 'Пробуждение сервера...';
-        await wakeServer();
-        if (statusEl) statusEl.textContent = '';
-    }
     if (authToken && API_URL) {
-        try {
-            const data = await api('/me', 'GET');
-            currentUser = data.user;
-            await pullFromServer();
-            hideAuth();
-            if (!appInitialized) { appInitialized = true; initApp(); }
-        } catch (e) {
-            authToken = null;
-            localStorage.removeItem('planner_auth_token');
-            currentUser = null;
-            if (localStorage.getItem('planner_auth_skipped')) {
-                hideAuth();
-                if (!appInitialized) { appInitialized = true; initApp(); }
+        hideAuth();
+        if (!appInitialized) { appInitialized = true; initApp(); }
+        wakeServer().then(async () => {
+            try {
+                const data = await api('/me', 'GET');
+                currentUser = data.user;
+                await pullFromServer();
+                saveAll();
+                updateXP();
+                renderToday(); renderWeek(); renderState(); renderWorkouts(); renderReflection();
+            } catch (e) {
+                if (e.message && e.message.includes('Токен')) {
+                    authToken = null;
+                    localStorage.removeItem('planner_auth_token');
+                    currentUser = null;
+                    showAuth();
+                }
             }
-        }
+        });
     } else if (localStorage.getItem('planner_auth_skipped') || !API_URL) {
         hideAuth();
         if (!appInitialized) { appInitialized = true; initApp(); }
