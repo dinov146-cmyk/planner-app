@@ -228,7 +228,7 @@ let dailyQuests = load('dailyQuests', {});
 let achievementsData = load('achievements', {});
 
 function getDefaultTasks(){ return (settings.defaultTasks || []).map(t=>({text:t,done:false})); }
-function saveAll(){ save('xp',xp); save('tasks',tasks); save('workouts',workouts); save('state',state); save('reflection',reflection); save('settings',settings); save('pomodoro',pomodoro); save('dailyQuests',dailyQuests); save('achievements',achievementsData); schedulePush(); }
+function saveAll(){ save('xp',xp); save('tasks',tasks); save('workouts',workouts); save('state',state); save('reflection',reflection); save('settings',settings); save('pomodoro',pomodoro); save('dailyQuests',dailyQuests); save('achievements',achievementsData); if(syncDone) schedulePush(); }
 
 function addXP(amount){ xp.total += amount; checkLevelUp(); saveAll(); updateXP(); checkAchievements(); }
 function removeXP(amount){ xp.total = Math.max(0, xp.total - amount); saveAll(); updateXP(); }
@@ -806,28 +806,30 @@ function initApp(){
 }
 
 let appInitialized = false;
+let syncDone = false;
 document.addEventListener('DOMContentLoaded', async () => {
     setupAuthUI();
     if (authToken && API_URL) {
         hideAuth();
         if (!appInitialized) { appInitialized = true; initApp(); }
-        wakeServer().then(async () => {
-            try {
-                const data = await api('/me', 'GET');
-                currentUser = data.user;
-                await pullFromServer();
-                saveAll();
-                updateXP();
-                renderToday(); renderWeek(); renderState(); renderWorkouts(); renderReflection();
-            } catch (e) {
-                if (e.message && e.message.includes('Токен')) {
-                    authToken = null;
-                    localStorage.removeItem('planner_auth_token');
-                    currentUser = null;
-                    showAuth();
-                }
+        try {
+            await wakeServer();
+            const data = await api('/me', 'GET');
+            currentUser = data.user;
+            syncDone = false;
+            await pullFromServer();
+            syncDone = true;
+            saveAll();
+            updateXP();
+            renderToday(); renderWeek(); renderState(); renderWorkouts(); renderReflection();
+        } catch (e) {
+            if (e.message && e.message.includes('Токен')) {
+                authToken = null;
+                localStorage.removeItem('planner_auth_token');
+                currentUser = null;
+                showAuth();
             }
-        });
+        }
     } else if (localStorage.getItem('planner_auth_skipped') || !API_URL) {
         hideAuth();
         if (!appInitialized) { appInitialized = true; initApp(); }
